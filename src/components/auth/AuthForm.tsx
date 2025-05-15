@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -26,7 +26,7 @@ export function AuthForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       
@@ -57,6 +57,7 @@ export function AuthForm() {
               first_name: firstName,
               last_name: lastName,
             },
+            redirectTo: `${window.location.origin}/dashboard`,
           }
         });
         if (error) throw error;
