@@ -57,7 +57,7 @@ export function AuthForm() {
               first_name: firstName,
               last_name: lastName,
             },
-            redirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/dashboard`,
           }
         });
         if (error) throw error;
