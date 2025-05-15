@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, File, Home, MenuIcon, PieChart } from "lucide-react";
 import { useSidebar } from "./sidebar-provider";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UserMenu } from "./UserMenu";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -43,7 +44,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const sidebarItems = [
-    { icon: <Home size={20} />, label: "Dashboard", to: "/" },
+    { icon: <Home size={20} />, label: "Dashboard", to: "/dashboard" },
     { icon: <File size={20} />, label: "Documents", to: "/documents" },
     { icon: <PieChart size={20} />, label: "Finance", to: "/finance" },
     { icon: <Calendar size={20} />, label: "Calendar", to: "/calendar" },
@@ -91,9 +92,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <header className="bg-sidebar text-sidebar-foreground p-4 md:hidden sticky top-0 z-10">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold">FinanceDocs</h2>
-            <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
-              <MenuIcon size={20} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <UserMenu />
+              <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
+                <MenuIcon size={20} />
+              </Button>
+            </div>
           </div>
           {showMobileMenu && (
             <nav className="pt-4 animate-fade-in">
@@ -117,6 +121,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           )}
         </header>
 
+        {/* Desktop Header */}
+        <div className="hidden md:flex items-center justify-end p-4 border-b">
+          <UserMenu />
+        </div>
+
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-6">
           {children}
@@ -124,6 +133,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </div>
     </div>
   );
-};
+}
 
 export default DashboardLayout;
