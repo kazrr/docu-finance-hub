@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Search, File, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UploadDialog } from "@/components/documents/UploadDialog";
 
 type DocumentCategory = "all" | "bills" | "bank" | "insurance" | "notices" | "renewal";
 
@@ -60,9 +61,11 @@ const Documents = () => {
           <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
           <p className="text-muted-foreground">Upload, organize and search your documents</p>
         </div>
-        <Button>
-          <Upload className="mr-2 h-4 w-4" /> Upload Document
-        </Button>
+        <UploadDialog>
+          <Button>
+            <Upload className="mr-2 h-4 w-4" /> Upload Document
+          </Button>
+        </UploadDialog>
       </div>
 
       <Card>
@@ -102,9 +105,11 @@ const Documents = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       Upload your first document to get started with organizing your finances
                     </p>
-                    <Button>
-                      <Upload className="mr-2 h-4 w-4" /> Upload Document
-                    </Button>
+                    <UploadDialog>
+                      <Button>
+                        <Upload className="mr-2 h-4 w-4" /> Upload Document
+                      </Button>
+                    </UploadDialog>
                   </div>
                 </div>
               </TabsContent>

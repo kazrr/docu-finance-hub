@@ -5,6 +5,7 @@ import { Calendar, File, PieChart, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { UploadDialog } from "@/components/documents/UploadDialog";
 
 const StatCard = ({ title, value, description, icon }: { 
   title: string; 
@@ -35,11 +36,11 @@ const Index = () => {
           <p className="text-muted-foreground">Welcome to your Document & Finance Manager</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild>
-            <Link to="/documents">
+          <UploadDialog>
+            <Button>
               <Upload className="mr-2 h-4 w-4" /> Upload Document
-            </Link>
-          </Button>
+            </Button>
+          </UploadDialog>
         </div>
       </div>
 
@@ -93,11 +94,11 @@ const Index = () => {
             <CardDescription>Common tasks and shortcuts</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button className="w-full justify-start" variant="outline" asChild>
-              <Link to="/documents">
+            <UploadDialog>
+              <Button className="w-full justify-start" variant="outline">
                 <Upload className="mr-2 h-4 w-4" /> Upload a document
-              </Link>
-            </Button>
+              </Button>
+            </UploadDialog>
             <Button className="w-full justify-start" variant="outline" asChild>
               <Link to="/documents">
                 <File className="mr-2 h-4 w-4" /> Review pending documents
