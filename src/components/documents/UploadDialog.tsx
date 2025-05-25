@@ -12,9 +12,10 @@ type DocumentCategory = "bills" | "bank" | "insurance" | "notices" | "renewal";
 
 interface UploadDialogProps {
   children: React.ReactNode;
+  onUploadSuccess?: () => void;
 }
 
-export const UploadDialog = ({ children }: UploadDialogProps) => {
+export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) => {
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [category, setCategory] = useState<DocumentCategory>("bills");
@@ -59,12 +60,20 @@ export const UploadDialog = ({ children }: UploadDialogProps) => {
     setCategory("bills");
     setOpen(false);
 
-    // Show success message after a delay
+    // Show success message after a delay and trigger callback
     setTimeout(() => {
       toast({
         title: "Upload successful",
         description: "Your document has been uploaded successfully.",
       });
+      
+      // Trigger any callback for dashboard updates
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
+      
+      // Force a page refresh to update dashboard statistics
+      window.location.reload();
     }, 2000);
   };
 

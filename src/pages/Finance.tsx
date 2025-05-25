@@ -7,7 +7,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Responsive
 import { cn } from "@/lib/utils";
 import { Upload, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { UploadDialog } from "@/components/documents/UploadDialog";
 
 const categoryColors: Record<string, string> = {
   "Rent": "#8B5CF6",
@@ -122,11 +122,11 @@ const Finance = () => {
             <p className="text-sm text-muted-foreground mb-4">
               Upload documents with financial information to see spending analytics
             </p>
-            <Button asChild>
-              <Link to="/documents">
+            <UploadDialog>
+              <Button>
                 <Upload className="mr-2 h-4 w-4" /> Upload Documents
-              </Link>
-            </Button>
+              </Button>
+            </UploadDialog>
           </div>
         </CardContent>
       </Card>
