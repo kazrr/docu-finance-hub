@@ -46,26 +46,26 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Total Documents" 
-          value="12" 
-          description="3 uploaded this month"
+          value="0" 
+          description="No documents uploaded yet"
           icon={<File className="h-4 w-4" />} 
         />
         <StatCard 
           title="Upcoming Payments" 
-          value="4" 
-          description="Next: Internet Bill (May 18)"
+          value="0" 
+          description="No payments scheduled"
           icon={<Calendar className="h-4 w-4" />} 
         />
         <StatCard 
           title="Monthly Expenses" 
-          value="$2,156.40" 
-          description="15% less than last month"
+          value="$0.00" 
+          description="No expenses tracked yet"
           icon={<PieChart className="h-4 w-4" />} 
         />
         <StatCard 
           title="Pending Documents" 
-          value="3" 
-          description="Awaiting categorization"
+          value="0" 
+          description="No documents pending"
           icon={<File className="h-4 w-4" />} 
         />
       </div>
@@ -77,51 +77,12 @@ const Index = () => {
             <CardDescription>Your recent document and finance activities</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  title: "Electric Bill - April",
-                  description: "Uploaded and categorized as Bill Statement",
-                  date: "May 5, 2025",
-                  type: "document",
-                },
-                {
-                  title: "Rent Payment",
-                  description: "Extracted transaction of $1,200",
-                  date: "May 3, 2025",
-                  type: "finance",
-                },
-                {
-                  title: "Insurance Policy",
-                  description: "Classified as Insurance Document",
-                  date: "May 1, 2025",
-                  type: "document",
-                },
-                {
-                  title: "Bank Statement - April",
-                  description: "Extracted 24 transactions",
-                  date: "Apr 30, 2025",
-                  type: "finance",
-                }
-              ].map((activity, index) => (
-                <div key={index} className="flex items-start gap-4 p-3 rounded-md hover:bg-muted">
-                  <div className={cn(
-                    "p-2 rounded-full flex items-center justify-center",
-                    activity.type === "document" ? "bg-blue-100" : "bg-green-100"
-                  )}>
-                    {activity.type === "document" ? (
-                      <File className="h-4 w-4 text-blue-600" />
-                    ) : (
-                      <PieChart className="h-4 w-4 text-green-600" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.title}</p>
-                    <p className="text-sm text-muted-foreground">{activity.description}</p>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{activity.date}</div>
-                </div>
-              ))}
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <File className="h-10 w-10 text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium">No activity yet</h3>
+              <p className="text-sm text-muted-foreground">
+                Upload your first document to get started
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -24,88 +24,7 @@ const Documents = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>("all");
   
-  const documents: Document[] = [
-    {
-      id: "1",
-      title: "Electric Bill - May 2025",
-      category: "bills",
-      date: "May 10, 2025",
-      vendor: "Power Company Inc.",
-      fileType: "PDF",
-      fileSize: "1.2 MB",
-      processed: true
-    },
-    {
-      id: "2",
-      title: "Bank Statement - April 2025",
-      category: "bank",
-      date: "May 2, 2025",
-      vendor: "National Bank",
-      fileType: "PDF",
-      fileSize: "2.4 MB",
-      processed: true
-    },
-    {
-      id: "3",
-      title: "Home Insurance Renewal",
-      category: "insurance",
-      date: "April 28, 2025",
-      vendor: "Safe Insurance Co.",
-      fileType: "PDF",
-      fileSize: "0.8 MB",
-      processed: true
-    },
-    {
-      id: "4",
-      title: "Tax Notice",
-      category: "notices",
-      date: "April 15, 2025",
-      vendor: "Revenue Department",
-      fileType: "PDF",
-      fileSize: "1.5 MB",
-      processed: false
-    },
-    {
-      id: "5",
-      title: "Internet Bill - April 2025",
-      category: "bills",
-      date: "April 8, 2025",
-      vendor: "Connect ISP",
-      fileType: "PDF",
-      fileSize: "0.5 MB",
-      processed: true
-    },
-    {
-      id: "6",
-      title: "Car Insurance Policy",
-      category: "insurance",
-      date: "March 20, 2025",
-      vendor: "Auto Protect Inc.",
-      fileType: "PDF",
-      fileSize: "1.7 MB",
-      processed: true
-    },
-    {
-      id: "7",
-      title: "Credit Card Statement",
-      category: "bank",
-      date: "March 15, 2025",
-      vendor: "Global Bank",
-      fileType: "PDF",
-      fileSize: "1.1 MB",
-      processed: false
-    },
-    {
-      id: "8",
-      title: "Software Subscription Renewal",
-      category: "renewal",
-      date: "March 5, 2025",
-      vendor: "Tech Solutions Ltd.",
-      fileType: "PDF",
-      fileSize: "0.3 MB",
-      processed: true
-    }
-  ];
+  const documents: Document[] = []; // Empty array - no test data
 
   const filteredDocuments = documents
     .filter(doc => selectedCategory === "all" || doc.category === selectedCategory)
@@ -177,46 +96,16 @@ const Documents = () => {
             {categories.map((category) => (
               <TabsContent key={category.value} value={category.value}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredDocuments.length > 0 ? (
-                    filteredDocuments.map((doc) => (
-                      <Card key={doc.id} className="overflow-hidden">
-                        <CardHeader className="pb-2 pt-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-base">{doc.title}</CardTitle>
-                              <CardDescription>{doc.vendor}</CardDescription>
-                            </div>
-                            <div className={cn("px-2 py-1 rounded-full text-xs font-medium", 
-                              getCategoryBadgeColor(doc.category)
-                            )}>
-                              {categories.find(c => c.value === doc.category)?.label.replace(" Statements", "").replace(" Documents", "")}
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <File className="mr-1 h-3 w-3" />
-                              <span>{doc.fileType} · {doc.fileSize}</span>
-                            </div>
-                            <div>{doc.date}</div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="pt-0">
-                          <div className="flex justify-between w-full">
-                            <Button size="sm" variant="ghost">View</Button>
-                            <Button size="sm" variant="outline">Download</Button>
-                          </div>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="col-span-full flex flex-col items-center justify-center p-8 text-center">
-                      <File className="h-10 w-10 text-muted-foreground mb-2" />
-                      <h3 className="text-lg font-medium">No documents found</h3>
-                      <p className="text-sm text-muted-foreground">Try adjusting your search or filters</p>
-                    </div>
-                  )}
+                  <div className="col-span-full flex flex-col items-center justify-center p-8 text-center">
+                    <Upload className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-medium mb-2">No documents yet</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Upload your first document to get started with organizing your finances
+                    </p>
+                    <Button>
+                      <Upload className="mr-2 h-4 w-4" /> Upload Document
+                    </Button>
+                  </div>
                 </div>
               </TabsContent>
             ))}
