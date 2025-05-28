@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, File, Eye, Download } from "lucide-react";
+import { Upload, Search, File, Eye, Download, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UploadDialog } from "@/components/documents/UploadDialog";
 import { ProcessingIndicator } from "@/components/documents/ProcessingIndicator";
 import { useDocuments, Document } from "@/hooks/use-documents";
+import { useProcessDocument } from "@/hooks/use-document-processing";
 
 type DocumentCategory = "all" | "bills" | "bank" | "insurance" | "notices" | "renewal";
 
@@ -17,6 +18,7 @@ const Documents = () => {
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>("all");
   
   const { data: documents = [], isLoading } = useDocuments();
+  const processDocument = useProcessDocument();
 
   const filteredDocuments = documents
     .filter(doc => selectedCategory === "all" || doc.category === selectedCategory)
@@ -51,6 +53,14 @@ const Documents = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleRetryProcessing = async (documentId: string) => {
+    try {
+      await processDocument.mutateAsync(documentId);
+    } catch (error) {
+      console.error('Failed to retry processing:', error);
+    }
   };
 
   if (isLoading) {
@@ -130,7 +140,10 @@ const Documents = () => {
                                 )}>
                                   {document.category}
                                 </span>
-                                <ProcessingIndicator processed={document.processed} />
+                                <ProcessingIndicator 
+                                  processed={document.processed} 
+                                  processingError={document.processing_error}
+                                />
                               </div>
                             </div>
                             <File className="h-4 w-4 text-muted-foreground" />
@@ -150,18 +163,38 @@ const Documents = () => {
                               <span>Uploaded:</span>
                               <span>{new Date(document.upload_date).toLocaleDateString()}</span>
                             </div>
+                            {document.processing_error && (
+                              <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
+                                <strong>Processing Error:</strong> {document.processing_error}
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                         <CardFooter className="pt-0">
                           <div className="flex space-x-2 w-full">
-                            <Button variant="outline" size="sm" className="flex-1">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            <Button variant="outline" size="sm" className="flex-1">
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
-                            </Button>
+                            {document.processing_error ? (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => handleRetryProcessing(document.id)}
+                                disabled={processDocument.isPending}
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Retry OCR
+                              </Button>
+                            ) : (
+                              <>
+                                <Button variant="outline" size="sm" className="flex-1">
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  View
+                                </Button>
+                                <Button variant="outline" size="sm" className="flex-1">
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Download
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </CardFooter>
                       </Card>

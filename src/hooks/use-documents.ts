@@ -13,6 +13,7 @@ export interface Document {
   vendor: string;
   upload_date: string;
   processed: boolean;
+  processing_error?: string | null;
   file_url: string | null;
   user_id: string;
 }
@@ -67,11 +68,6 @@ export const useUploadDocument = () => {
       if (uploadError) {
         throw uploadError;
       }
-
-      // Get file URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("documents")
-        .getPublicUrl(filePath);
 
       // Insert document record
       const { data, error } = await supabase

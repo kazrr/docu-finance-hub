@@ -41,15 +41,16 @@ serve(async (req) => {
       throw new Error('Document not found');
     }
 
-    console.log('Document found:', document.title);
+    console.log('Document found:', document.title, 'File path:', document.file_url);
 
-    // Get file from storage
+    // Get file from storage - fix the file path issue
     const { data: fileData, error: fileError } = await supabase.storage
       .from('documents')
-      .download(document.file_url.split('/').pop()!);
+      .download(document.file_url);
 
     if (fileError || !fileData) {
-      throw new Error('Failed to download file');
+      console.error('Storage download error:', fileError);
+      throw new Error(`Failed to download file: ${fileError?.message || 'Unknown error'}`);
     }
 
     // Convert file to base64 for OpenAI
@@ -192,6 +193,27 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing document:', error);
+    
+    // Try to mark document as processed with error
+    try {
+      const { documentId } = await req.json();
+      if (documentId) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        await supabase
+          .from('documents')
+          .update({ 
+            processed: true,
+            processing_error: error.message 
+          })
+          .eq('id', documentId);
+      }
+    } catch (updateError) {
+      console.error('Failed to update document with error:', updateError);
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
