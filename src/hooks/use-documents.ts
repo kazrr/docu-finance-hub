@@ -83,7 +83,7 @@ export const useUploadDocument = () => {
           file_type: file.type,
           category,
           vendor,
-          file_url: publicUrl,
+          file_url: filePath, // Store the file path, not public URL
           user_id: user.id,
         })
         .select()
@@ -93,6 +93,17 @@ export const useUploadDocument = () => {
         throw error;
       }
 
+      // Automatically process the document for OCR
+      try {
+        console.log('Triggering document processing for:', data.id);
+        await supabase.functions.invoke('process-document', {
+          body: { documentId: data.id }
+        });
+      } catch (processError) {
+        console.error('Failed to trigger document processing:', processError);
+        // Don't throw here - document upload was successful, processing can be retried
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -100,7 +111,7 @@ export const useUploadDocument = () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast({
         title: "Upload successful",
-        description: "Your document has been uploaded successfully.",
+        description: "Your document has been uploaded and is being processed for data extraction.",
       });
     },
     onError: (error: Error) => {

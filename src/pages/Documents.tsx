@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, File, Filter, Eye, Download, Trash2 } from "lucide-react";
+import { Upload, Search, File, Eye, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UploadDialog } from "@/components/documents/UploadDialog";
+import { ProcessingIndicator } from "@/components/documents/ProcessingIndicator";
 import { useDocuments, Document } from "@/hooks/use-documents";
 
 type DocumentCategory = "all" | "bills" | "bank" | "insurance" | "notices" | "renewal";
@@ -73,7 +74,7 @@ const Documents = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground">Upload, organize and search your documents</p>
+          <p className="text-muted-foreground">Upload, organize and search your documents with automatic OCR processing</p>
         </div>
         <UploadDialog>
           <Button>
@@ -87,7 +88,7 @@ const Documents = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
             <div className="space-y-1">
               <CardTitle>Document Library</CardTitle>
-              <CardDescription>Manage and organize all your uploaded documents</CardDescription>
+              <CardDescription>Manage and organize all your uploaded documents with AI-powered data extraction</CardDescription>
             </div>
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -122,18 +123,14 @@ const Documents = () => {
                               <CardTitle className="text-sm font-medium truncate">
                                 {document.title}
                               </CardTitle>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-2 flex-wrap gap-1">
                                 <span className={cn(
                                   "px-2 py-1 text-xs rounded-full font-medium",
                                   getCategoryBadgeColor(document.category)
                                 )}>
                                   {document.category}
                                 </span>
-                                {document.processed && (
-                                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 font-medium">
-                                    Processed
-                                  </span>
-                                )}
+                                <ProcessingIndicator processed={document.processed} />
                               </div>
                             </div>
                             <File className="h-4 w-4 text-muted-foreground" />
@@ -178,7 +175,7 @@ const Documents = () => {
                       <p className="text-sm text-muted-foreground mb-4">
                         {searchQuery 
                           ? "Try adjusting your search terms"
-                          : "Upload your first document to get started with organizing your finances"
+                          : "Upload your first document to get started with AI-powered financial data extraction"
                         }
                       </p>
                       {!searchQuery && (
