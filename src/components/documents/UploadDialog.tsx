@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useUploadDocument } from "@/hooks/use-documents";
 
 type DocumentCategory = "bills" | "bank" | "insurance" | "notices" | "renewal";
 
@@ -20,7 +20,8 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [category, setCategory] = useState<DocumentCategory>("bills");
   const [vendor, setVendor] = useState("");
-  const { toast } = useToast();
+  
+  const uploadMutation = useUploadDocument();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -29,52 +30,35 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
-      toast({
-        title: "No file selected",
-        description: "Please select a file to upload.",
-        variant: "destructive",
-      });
       return;
     }
 
     if (!vendor.trim()) {
-      toast({
-        title: "Vendor required",
-        description: "Please enter a vendor name.",
-        variant: "destructive",
-      });
       return;
     }
 
-    // Simulate upload process
-    toast({
-      title: "Upload started",
-      description: `Uploading ${selectedFile.name}...`,
-    });
-
-    // Reset form and close dialog
-    setSelectedFile(null);
-    setVendor("");
-    setCategory("bills");
-    setOpen(false);
-
-    // Show success message after a delay and trigger callback
-    setTimeout(() => {
-      toast({
-        title: "Upload successful",
-        description: "Your document has been uploaded successfully.",
+    try {
+      await uploadMutation.mutateAsync({
+        file: selectedFile,
+        category,
+        vendor: vendor.trim(),
       });
+
+      // Reset form and close dialog
+      setSelectedFile(null);
+      setVendor("");
+      setCategory("bills");
+      setOpen(false);
       
-      // Trigger any callback for dashboard updates
+      // Trigger callback if provided
       if (onUploadSuccess) {
         onUploadSuccess();
       }
-      
-      // Force a page refresh to update dashboard statistics
-      window.location.reload();
-    }, 2000);
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
   };
 
   return (
@@ -133,9 +117,12 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handleUpload}>
+          <Button 
+            onClick={handleUpload} 
+            disabled={!selectedFile || !vendor.trim() || uploadMutation.isPending}
+          >
             <Upload className="mr-2 h-4 w-4" />
-            Upload Document
+            {uploadMutation.isPending ? "Uploading..." : "Upload Document"}
           </Button>
         </div>
       </DialogContent>

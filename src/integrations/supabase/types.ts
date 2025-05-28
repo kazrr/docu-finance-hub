@@ -9,6 +9,148 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      documents: {
+        Row: {
+          category: string
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string | null
+          id: string
+          processed: boolean
+          title: string
+          updated_at: string
+          upload_date: string
+          user_id: string
+          vendor: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url?: string | null
+          id?: string
+          processed?: boolean
+          title: string
+          updated_at?: string
+          upload_date?: string
+          user_id: string
+          vendor: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string | null
+          id?: string
+          processed?: boolean
+          title?: string
+          updated_at?: string
+          upload_date?: string
+          user_id?: string
+          vendor?: string
+        }
+        Relationships: []
+      }
+      extracted_data: {
+        Row: {
+          account_number: string | null
+          amount: number | null
+          confidence_score: number | null
+          created_at: string
+          description: string | null
+          document_id: string
+          due_date: string | null
+          id: string
+          raw_text: string | null
+          transaction_date: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          amount?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string | null
+          document_id: string
+          due_date?: string | null
+          id?: string
+          raw_text?: string | null
+          transaction_date?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          amount?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string | null
+          document_id?: string
+          due_date?: string | null
+          id?: string
+          raw_text?: string | null
+          transaction_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extracted_data_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_reminders: {
+        Row: {
+          amount: number | null
+          category: string
+          created_at: string
+          document_id: string | null
+          due_date: string
+          id: string
+          is_completed: boolean
+          title: string
+          user_id: string
+          vendor: string
+        }
+        Insert: {
+          amount?: number | null
+          category: string
+          created_at?: string
+          document_id?: string | null
+          due_date: string
+          id?: string
+          is_completed?: boolean
+          title: string
+          user_id: string
+          vendor: string
+        }
+        Update: {
+          amount?: number | null
+          category?: string
+          created_at?: string
+          document_id?: string | null
+          due_date?: string
+          id?: string
+          is_completed?: boolean
+          title?: string
+          user_id?: string
+          vendor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminders_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

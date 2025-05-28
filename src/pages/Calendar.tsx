@@ -4,38 +4,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon } from "lucide-react";
-
-interface ReminderEvent {
-  id: number;
-  title: string;
-  date: Date;
-  amount?: number;
-  category: string;
-  documentId?: string;
-}
+import { usePaymentReminders, PaymentReminder } from "@/hooks/use-payment-reminders";
 
 const Calendar = () => {
   const [date, setDate] = useState<Date>(new Date());
-  const events: ReminderEvent[] = []; // Empty array - no test data
+  const { data: reminders = [], isLoading } = usePaymentReminders();
 
   // Filter events for the selected date
-  const selectedDateEvents = events.filter(event => 
-    event.date.getDate() === date.getDate() && 
-    event.date.getMonth() === date.getMonth() && 
-    event.date.getFullYear() === date.getFullYear()
-  );
+  const selectedDateEvents = reminders.filter(reminder => {
+    const reminderDate = new Date(reminder.due_date);
+    return reminderDate.getDate() === date.getDate() && 
+           reminderDate.getMonth() === date.getMonth() && 
+           reminderDate.getFullYear() === date.getFullYear();
+  });
   
   // Find dates with events for highlighting on the calendar
-  const eventDates = events.map(event => event.date);
+  const eventDates = reminders.map(reminder => new Date(reminder.due_date));
   
   // Upcoming events (from today forward)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const upcomingEvents = events
-    .filter(event => event.date >= today)
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
+  const upcomingEvents = reminders
+    .filter(reminder => new Date(reminder.due_date) >= today && !reminder.is_completed)
+    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
     .slice(0, 5);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
+          <p className="text-muted-foreground">Track upcoming payments and financial deadlines</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <p>Loading calendar data...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -108,7 +115,9 @@ const Calendar = () => {
                       </div>
                       <div className="flex items-center mt-1 text-sm text-muted-foreground">
                         <span className="mr-2">{event.category}</span>
-                        {event.documentId && (
+                        <span className="mr-2">•</span>
+                        <span className="mr-2">{event.vendor}</span>
+                        {event.document_id && (
                           <span className="text-xs bg-secondary px-2 py-0.5 rounded-full">
                             Linked to document
                           </span>
@@ -137,13 +146,36 @@ const Calendar = () => {
           <CardDescription>Next 5 scheduled payments from your documents</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <CalendarIcon className="h-10 w-10 text-muted-foreground mb-2" />
-            <h3 className="text-lg font-medium">No upcoming payments</h3>
-            <p className="text-sm text-muted-foreground">
-              Upload documents to automatically detect payment reminders
-            </p>
-          </div>
+          {upcomingEvents.length > 0 ? (
+            <div className="space-y-4">
+              {upcomingEvents.map(event => (
+                <div key={event.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">{event.title}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {event.vendor} • {event.category}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {event.amount && (
+                      <p className="font-medium">${event.amount.toFixed(2)}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(event.due_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CalendarIcon className="h-10 w-10 text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium">No upcoming payments</h3>
+              <p className="text-sm text-muted-foreground">
+                Upload documents to automatically detect payment reminders
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

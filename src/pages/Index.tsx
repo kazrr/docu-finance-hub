@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { UploadDialog } from "@/components/documents/UploadDialog";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 
 const StatCard = ({ title, value, description, icon }: { 
   title: string; 
@@ -27,6 +28,7 @@ const StatCard = ({ title, value, description, icon }: {
 
 const Index = () => {
   const isMobile = useIsMobile();
+  const { data: stats, isLoading } = useDashboardStats();
   
   return (
     <div className="space-y-6">
@@ -47,26 +49,50 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Total Documents" 
-          value="0" 
-          description="No documents uploaded yet"
+          value={isLoading ? "..." : stats?.totalDocuments.toString() || "0"} 
+          description={
+            isLoading 
+              ? "Loading..." 
+              : stats?.totalDocuments === 0 
+                ? "No documents uploaded yet" 
+                : `${stats?.totalDocuments} document${(stats?.totalDocuments || 0) > 1 ? 's' : ''} stored`
+          }
           icon={<File className="h-4 w-4" />} 
         />
         <StatCard 
           title="Upcoming Payments" 
-          value="0" 
-          description="No payments scheduled"
+          value={isLoading ? "..." : stats?.upcomingPayments.toString() || "0"} 
+          description={
+            isLoading 
+              ? "Loading..." 
+              : stats?.upcomingPayments === 0 
+                ? "No payments scheduled" 
+                : `${stats?.upcomingPayments} payment${(stats?.upcomingPayments || 0) > 1 ? 's' : ''} due soon`
+          }
           icon={<Calendar className="h-4 w-4" />} 
         />
         <StatCard 
           title="Monthly Expenses" 
-          value="$0.00" 
-          description="No expenses tracked yet"
+          value={isLoading ? "..." : `$${(stats?.monthlyExpenses || 0).toFixed(2)}`} 
+          description={
+            isLoading 
+              ? "Loading..." 
+              : stats?.monthlyExpenses === 0 
+                ? "No expenses tracked yet" 
+                : "From uploaded documents"
+          }
           icon={<PieChart className="h-4 w-4" />} 
         />
         <StatCard 
           title="Pending Documents" 
-          value="0" 
-          description="No documents pending"
+          value={isLoading ? "..." : stats?.pendingDocuments.toString() || "0"} 
+          description={
+            isLoading 
+              ? "Loading..." 
+              : stats?.pendingDocuments === 0 
+                ? "All documents processed" 
+                : `${stats?.pendingDocuments} document${(stats?.pendingDocuments || 0) > 1 ? 's' : ''} awaiting processing`
+          }
           icon={<File className="h-4 w-4" />} 
         />
       </div>

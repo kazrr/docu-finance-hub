@@ -4,28 +4,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, File, Filter } from "lucide-react";
+import { Upload, Search, File, Filter, Eye, Download, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UploadDialog } from "@/components/documents/UploadDialog";
+import { useDocuments, Document } from "@/hooks/use-documents";
 
 type DocumentCategory = "all" | "bills" | "bank" | "insurance" | "notices" | "renewal";
-
-interface Document {
-  id: string;
-  title: string;
-  category: DocumentCategory;
-  date: string;
-  vendor: string;
-  fileType: string;
-  fileSize: string;
-  processed: boolean;
-}
 
 const Documents = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>("all");
   
-  const documents: Document[] = []; // Empty array - no test data
+  const { data: documents = [], isLoading } = useDocuments();
 
   const filteredDocuments = documents
     .filter(doc => selectedCategory === "all" || doc.category === selectedCategory)
@@ -43,7 +33,7 @@ const Documents = () => {
     { value: "renewal", label: "Renewals" },
   ];
 
-  const getCategoryBadgeColor = (category: DocumentCategory) => {
+  const getCategoryBadgeColor = (category: string) => {
     switch(category) {
       case "bills": return "bg-blue-100 text-blue-800";
       case "bank": return "bg-green-100 text-green-800";
@@ -53,6 +43,30 @@ const Documents = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
+            <p className="text-muted-foreground">Upload, organize and search your documents</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <p>Loading documents...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -99,18 +113,83 @@ const Documents = () => {
             {categories.map((category) => (
               <TabsContent key={category.value} value={category.value}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="col-span-full flex flex-col items-center justify-center p-8 text-center">
-                    <Upload className="h-16 w-16 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-medium mb-2">No documents yet</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Upload your first document to get started with organizing your finances
-                    </p>
-                    <UploadDialog>
-                      <Button>
-                        <Upload className="mr-2 h-4 w-4" /> Upload Document
-                      </Button>
-                    </UploadDialog>
-                  </div>
+                  {filteredDocuments.length > 0 ? (
+                    filteredDocuments.map((document) => (
+                      <Card key={document.id} className="hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              <CardTitle className="text-sm font-medium truncate">
+                                {document.title}
+                              </CardTitle>
+                              <div className="flex items-center space-x-2">
+                                <span className={cn(
+                                  "px-2 py-1 text-xs rounded-full font-medium",
+                                  getCategoryBadgeColor(document.category)
+                                )}>
+                                  {document.category}
+                                </span>
+                                {document.processed && (
+                                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 font-medium">
+                                    Processed
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <File className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>Vendor:</span>
+                              <span className="font-medium truncate">{document.vendor}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Size:</span>
+                              <span>{formatFileSize(document.file_size)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Uploaded:</span>
+                              <span>{new Date(document.upload_date).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="pt-0">
+                          <div className="flex space-x-2 w-full">
+                            <Button variant="outline" size="sm" className="flex-1">
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button variant="outline" size="sm" className="flex-1">
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="col-span-full flex flex-col items-center justify-center p-8 text-center">
+                      <Upload className="h-16 w-16 text-muted-foreground mb-4" />
+                      <h3 className="text-xl font-medium mb-2">
+                        {searchQuery ? "No documents found" : "No documents yet"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {searchQuery 
+                          ? "Try adjusting your search terms"
+                          : "Upload your first document to get started with organizing your finances"
+                        }
+                      </p>
+                      {!searchQuery && (
+                        <UploadDialog>
+                          <Button>
+                            <Upload className="mr-2 h-4 w-4" /> Upload Document
+                          </Button>
+                        </UploadDialog>
+                      )}
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             ))}
