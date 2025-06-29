@@ -161,12 +161,13 @@ serve(async (req) => {
       }
     }
 
-    // Mark document as processed successfully
+    // Mark document as processed successfully and set status to 'complete'
     const { error: updateError } = await supabase
       .from('documents')
       .update({ 
         processed: true,
-        processing_error: null
+        processing_error: null,
+        status: 'complete'
       })
       .eq('id', documentId);
 
@@ -180,7 +181,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         extractedData,
-        message: 'Document processed successfully with simulated OCR' 
+        message: 'Document processed successfully with OCR' 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -219,41 +220,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Helper function to create mock extracted data based on document metadata
-function createMockExtractedData(document: any) {
-  const currentDate = new Date();
-  const nextMonth = new Date(currentDate);
-  nextMonth.setMonth(currentDate.getMonth() + 1);
-  
-  // Generate mock data based on document category and vendor
-  const mockData = {
-    amount: generateMockAmount(document.category),
-    due_date: document.category === 'bills' ? nextMonth.toISOString().split('T')[0] : null,
-    transaction_date: currentDate.toISOString().split('T')[0],
-    description: `${document.category} from ${document.vendor}`,
-    account_number: generateMockAccountNumber(),
-    raw_text: `Simulated OCR text for ${document.title}\nVendor: ${document.vendor}\nCategory: ${document.category}\nProcessed: ${currentDate.toISOString()}`,
-    confidence_score: 0.5 // Lower confidence since this is simulated
-  };
-
-  return mockData;
-}
-
-function generateMockAmount(category: string): number {
-  const ranges: Record<string, [number, number]> = {
-    'bills': [50, 500],
-    'bank': [100, 2000],
-    'insurance': [200, 800],
-    'notices': [25, 150],
-    'renewal': [100, 1000]
-  };
-  
-  const [min, max] = ranges[category] || [50, 300];
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function generateMockAccountNumber(): string {
-  const lastFour = Math.floor(Math.random() * 9000) + 1000;
-  return `****${lastFour}`;
-}
