@@ -43,14 +43,18 @@ serve(async (req) => {
 
     console.log('Document found:', document.title, 'File path:', document.file_url);
 
-    // Get file from storage - fix the file path issue
+    if (!document.file_url) {
+      throw new Error('Document file URL is missing');
+    }
+
+    // Get file from storage
     const { data: fileData, error: fileError } = await supabase.storage
       .from('documents')
       .download(document.file_url);
 
     if (fileError || !fileData) {
       console.error('Storage download error:', fileError);
-      throw new Error(`Failed to download file: ${fileError?.message || 'Unknown error'}`);
+      throw new Error(`Failed to download file: ${fileError?.message || 'File not found in storage'}`);
     }
 
     // Convert file to base64 for OpenAI
@@ -58,7 +62,7 @@ serve(async (req) => {
     const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
     const mimeType = document.file_type;
 
-    console.log('File converted to base64, size:', buffer.byteLength);
+    console.log('File converted to base64, size:', buffer.byteLength, 'type:', mimeType);
 
     // Call OpenAI Vision API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -99,6 +103,11 @@ serve(async (req) => {
         temperature: 0.1
       }),
     });
+
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorText}`);
+    }
 
     const openaiData = await openaiResponse.json();
     
@@ -170,10 +179,13 @@ serve(async (req) => {
       }
     }
 
-    // Mark document as processed
+    // Mark document as processed successfully
     const { error: updateError } = await supabase
       .from('documents')
-      .update({ processed: true })
+      .update({ 
+        processed: true,
+        processing_error: null // Clear any previous errors
+      })
       .eq('id', documentId);
 
     if (updateError) {

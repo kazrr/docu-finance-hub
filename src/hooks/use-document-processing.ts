@@ -45,3 +45,90 @@ export const useProcessDocument = () => {
     },
   });
 };
+
+export const useDeleteDocument = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (documentId: string) => {
+      console.log('Deleting document:', documentId);
+      
+      // Get document details first to delete the file from storage
+      const { data: document, error: docError } = await supabase
+        .from("documents")
+        .select("file_url")
+        .eq("id", documentId)
+        .single();
+
+      if (docError) {
+        throw new Error(`Failed to fetch document: ${docError.message}`);
+      }
+
+      // Delete file from storage if it exists
+      if (document?.file_url) {
+        const { error: storageError } = await supabase.storage
+          .from("documents")
+          .remove([document.file_url]);
+
+        if (storageError) {
+          console.warn('Failed to delete file from storage:', storageError);
+          // Don't throw here - continue with database deletion
+        }
+      }
+
+      // Delete extracted data first (foreign key dependency)
+      const { error: extractedDataError } = await supabase
+        .from("extracted_data")
+        .delete()
+        .eq("document_id", documentId);
+
+      if (extractedDataError) {
+        console.warn('Failed to delete extracted data:', extractedDataError);
+        // Don't throw here - continue with other deletions
+      }
+
+      // Delete payment reminders
+      const { error: remindersError } = await supabase
+        .from("payment_reminders")
+        .delete()
+        .eq("document_id", documentId);
+
+      if (remindersError) {
+        console.warn('Failed to delete payment reminders:', remindersError);
+        // Don't throw here - continue with document deletion
+      }
+
+      // Finally delete the document record
+      const { error: deleteError } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", documentId);
+
+      if (deleteError) {
+        throw new Error(`Failed to delete document: ${deleteError.message}`);
+      }
+
+      return { documentId };
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-reminders"] });
+      
+      toast({
+        title: "Document deleted",
+        description: "Document and all associated data have been removed.",
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Document deletion failed:', error);
+      toast({
+        title: "Deletion failed",
+        description: error.message || "Failed to delete document.",
+        variant: "destructive",
+      });
+    },
+  });
+};

@@ -79,8 +79,9 @@ export const useUploadDocument = () => {
           file_type: file.type,
           category,
           vendor,
-          file_url: filePath, // Store the file path, not public URL
+          file_url: filePath,
           user_id: user.id,
+          processed: false, // Explicitly set to false
         })
         .select()
         .single();
@@ -89,15 +90,36 @@ export const useUploadDocument = () => {
         throw error;
       }
 
-      // Automatically process the document for OCR
+      // Trigger document processing with better error handling
       try {
         console.log('Triggering document processing for:', data.id);
-        await supabase.functions.invoke('process-document', {
+        const { data: processResult, error: processError } = await supabase.functions.invoke('process-document', {
           body: { documentId: data.id }
         });
+
+        if (processError) {
+          console.error('Failed to trigger document processing:', processError);
+          // Update document with processing error
+          await supabase
+            .from('documents')
+            .update({ 
+              processed: true,
+              processing_error: `Processing failed: ${processError.message}` 
+            })
+            .eq('id', data.id);
+        } else {
+          console.log('Document processing triggered successfully:', processResult);
+        }
       } catch (processError) {
         console.error('Failed to trigger document processing:', processError);
-        // Don't throw here - document upload was successful, processing can be retried
+        // Update document with processing error but don't throw
+        await supabase
+          .from('documents')
+          .update({ 
+            processed: true,
+            processing_error: `Processing failed: ${processError instanceof Error ? processError.message : 'Unknown error'}` 
+          })
+          .eq('id', data.id);
       }
 
       return data;

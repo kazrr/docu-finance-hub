@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, File, Eye, Download, RefreshCw } from "lucide-react";
+import { Upload, Search, File, Eye, Download, RefreshCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UploadDialog } from "@/components/documents/UploadDialog";
 import { ProcessingIndicator } from "@/components/documents/ProcessingIndicator";
 import { useDocuments, Document } from "@/hooks/use-documents";
-import { useProcessDocument } from "@/hooks/use-document-processing";
+import { useProcessDocument, useDeleteDocument } from "@/hooks/use-document-processing";
 
 type DocumentCategory = "all" | "bills" | "bank" | "insurance" | "notices" | "renewal";
 
@@ -19,6 +19,7 @@ const Documents = () => {
   
   const { data: documents = [], isLoading } = useDocuments();
   const processDocument = useProcessDocument();
+  const deleteDocument = useDeleteDocument();
 
   const filteredDocuments = documents
     .filter(doc => selectedCategory === "all" || doc.category === selectedCategory)
@@ -60,6 +61,16 @@ const Documents = () => {
       await processDocument.mutateAsync(documentId);
     } catch (error) {
       console.error('Failed to retry processing:', error);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (window.confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      try {
+        await deleteDocument.mutateAsync(documentId);
+      } catch (error) {
+        console.error('Failed to delete document:', error);
+      }
     }
   };
 
@@ -146,7 +157,18 @@ const Documents = () => {
                                 />
                               </div>
                             </div>
-                            <File className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex items-center space-x-1">
+                              <File className="h-4 w-4 text-muted-foreground" />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteDocument(document.id)}
+                                disabled={deleteDocument.isPending}
+                                className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0">
