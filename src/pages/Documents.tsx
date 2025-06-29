@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Search, File, Eye, Download, RefreshCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UploadDialog } from "@/components/documents/UploadDialog";
-import { ProcessingIndicator } from "@/components/documents/ProcessingIndicator";
+import { ProcessingProgressIndicator } from "@/components/documents/ProcessingProgressIndicator";
 import { useDocuments, Document } from "@/hooks/use-documents";
 import { useProcessDocument, useDeleteDocument } from "@/hooks/use-document-processing";
+import { useDocumentActions } from "@/hooks/use-document-actions";
 
 type DocumentCategory = "all" | "bills" | "bank" | "insurance" | "notices" | "renewal";
 
@@ -20,6 +20,7 @@ const Documents = () => {
   const { data: documents = [], isLoading } = useDocuments();
   const processDocument = useProcessDocument();
   const deleteDocument = useDeleteDocument();
+  const { viewDocument, downloadDocument, isLoading: actionLoading } = useDocumentActions();
 
   const filteredDocuments = documents
     .filter(doc => selectedCategory === "all" || doc.category === selectedCategory)
@@ -72,6 +73,20 @@ const Documents = () => {
         console.error('Failed to delete document:', error);
       }
     }
+  };
+
+  const handleViewDocument = async (document: Document) => {
+    if (!document.file_url) {
+      return;
+    }
+    await viewDocument(document.file_url, document.file_name);
+  };
+
+  const handleDownloadDocument = async (document: Document) => {
+    if (!document.file_url) {
+      return;
+    }
+    await downloadDocument(document.file_url, document.file_name);
   };
 
   if (isLoading) {
@@ -151,10 +166,6 @@ const Documents = () => {
                                 )}>
                                   {document.category}
                                 </span>
-                                <ProcessingIndicator 
-                                  processed={document.processed} 
-                                  processingError={document.processing_error}
-                                />
                               </div>
                             </div>
                             <div className="flex items-center space-x-1">
@@ -172,18 +183,25 @@ const Documents = () => {
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0">
-                          <div className="space-y-2 text-sm text-muted-foreground">
-                            <div className="flex justify-between">
-                              <span>Vendor:</span>
-                              <span className="font-medium truncate">{document.vendor}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Size:</span>
-                              <span>{formatFileSize(document.file_size)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Uploaded:</span>
-                              <span>{new Date(document.upload_date).toLocaleDateString()}</span>
+                          <div className="space-y-3">
+                            <ProcessingProgressIndicator 
+                              processed={document.processed} 
+                              processingError={document.processing_error}
+                              uploadDate={document.upload_date}
+                            />
+                            <div className="space-y-2 text-sm text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>Vendor:</span>
+                                <span className="font-medium truncate">{document.vendor}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Size:</span>
+                                <span>{formatFileSize(document.file_size)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Uploaded:</span>
+                                <span>{new Date(document.upload_date).toLocaleDateString()}</span>
+                              </div>
                             </div>
                             {document.processing_error && (
                               <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
@@ -207,11 +225,23 @@ const Documents = () => {
                               </Button>
                             ) : (
                               <>
-                                <Button variant="outline" size="sm" className="flex-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={() => handleViewDocument(document)}
+                                  disabled={actionLoading || !document.file_url}
+                                >
                                   <Eye className="h-3 w-3 mr-1" />
                                   View
                                 </Button>
-                                <Button variant="outline" size="sm" className="flex-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={() => handleDownloadDocument(document)}
+                                  disabled={actionLoading || !document.file_url}
+                                >
                                   <Download className="h-3 w-3 mr-1" />
                                   Download
                                 </Button>
