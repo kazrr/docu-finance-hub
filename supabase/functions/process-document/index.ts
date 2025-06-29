@@ -14,19 +14,21 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const openaiKey = Deno.env.get('OPENAI_API_KEY')!;
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  let documentId: string | null = null;
+
   try {
-    const { documentId } = await req.json();
+    const requestBody = await req.json();
+    documentId = requestBody.documentId;
     
     if (!documentId) {
       throw new Error('Document ID is required');
     }
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openaiKey = Deno.env.get('OPENAI_API_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('Processing document:', documentId);
 
@@ -38,7 +40,7 @@ serve(async (req) => {
       .single();
 
     if (docError || !document) {
-      throw new Error('Document not found');
+      throw new Error(`Document not found: ${docError?.message || 'Unknown error'}`);
     }
 
     console.log('Document found:', document.title, 'File path:', document.file_url);
@@ -54,7 +56,7 @@ serve(async (req) => {
 
     if (fileError || !fileData) {
       console.error('Storage download error:', fileError);
-      throw new Error(`Failed to download file: ${fileError?.message || 'File not found in storage'}`);
+      throw new Error(`Failed to download file from storage: ${fileError?.message || 'File not found'}`);
     }
 
     // Convert file to base64 for OpenAI
@@ -106,7 +108,21 @@ serve(async (req) => {
 
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
-      throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorText}`);
+      let errorMessage = `OpenAI API error: ${openaiResponse.status}`;
+      
+      // Handle specific OpenAI errors
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error?.code === 'insufficient_quota') {
+          errorMessage = 'OpenAI API quota exceeded. Please check your billing settings.';
+        } else if (errorData.error?.message) {
+          errorMessage = `OpenAI API error: ${errorData.error.message}`;
+        }
+      } catch (parseError) {
+        errorMessage = `OpenAI API error: ${openaiResponse.status} - ${errorText}`;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const openaiData = await openaiResponse.json();
@@ -206,12 +222,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing document:', error);
     
-    // Try to mark document as processed with error
-    try {
-      const { documentId } = await req.json();
-      if (documentId) {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Mark document as processed with error if we have a documentId
+    if (documentId) {
+      try {
         const supabase = createClient(supabaseUrl, supabaseKey);
         
         await supabase
@@ -221,9 +234,11 @@ serve(async (req) => {
             processing_error: error.message 
           })
           .eq('id', documentId);
+        
+        console.log('Document marked as processed with error:', error.message);
+      } catch (updateError) {
+        console.error('Failed to update document with error:', updateError);
       }
-    } catch (updateError) {
-      console.error('Failed to update document with error:', updateError);
     }
     
     return new Response(
