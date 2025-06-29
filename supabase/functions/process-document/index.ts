@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -7,6 +6,37 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Helper to convert Blob to base64 (for OCR.space API)
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64data = (reader.result as string).split(',')[1];
+      resolve(base64data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Helper to extract fields from OCR text
+function extractFieldsFromText(text: string) {
+  // Simple regex-based extraction (customize as needed)
+  const amountMatch = text.match(/\$([0-9,.]+)/) || text.match(/Amount[:\s]*([0-9,.]+)/i);
+  const dueDateMatch = text.match(/Due Date[:\s]*([0-9\/-]+)/i);
+  const transactionDateMatch = text.match(/Date[:\s]*([0-9\/-]+)/i);
+  const accountNumberMatch = text.match(/Account(?: Number)?[:\s]*([0-9*]+)/i);
+  return {
+    amount: amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : null,
+    due_date: dueDateMatch ? dueDateMatch[1] : null,
+    transaction_date: transactionDateMatch ? transactionDateMatch[1] : null,
+    description: text.slice(0, 100), // First 100 chars as description
+    account_number: accountNumberMatch ? accountNumberMatch[1] : null,
+    raw_text: text,
+    confidence_score: 0.8 // Assume higher confidence for real OCR
+  };
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -60,17 +90,36 @@ serve(async (req) => {
 
     console.log('File downloaded successfully, size:', fileData.size, 'type:', document.file_type);
 
-    // For now, we'll simulate OCR processing and create a basic text extraction
-    // This is a placeholder until we can implement a proper OCR solution that works in Deno
-    console.log('Starting simulated OCR processing...');
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Create mock extracted data based on document metadata
-    const extractedData = createMockExtractedData(document);
-    
-    console.log('Simulated OCR completed, extracted data:', extractedData);
+    // --- Real OCR Implementation ---
+    // Convert fileData (Blob) to base64
+    const base64File = await blobToBase64(fileData);
+    const ocrApiKey = Deno.env.get('OCR_SPACE_API_KEY');
+    if (!ocrApiKey) throw new Error('OCR_SPACE_API_KEY is not set in environment');
+
+    // Send to OCR.space API
+    const ocrRes = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      headers: {
+        'apikey': ocrApiKey,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        base64Image: `data:${document.file_type};base64,${base64File}`,
+        isTable: 'false',
+        OCREngine: '2',
+        language: 'eng',
+      }),
+    });
+    const ocrJson = await ocrRes.json();
+    if (!ocrJson.ParsedResults || !ocrJson.ParsedResults[0]) {
+      throw new Error('OCR failed: No parsed results');
+    }
+    const ocrText = ocrJson.ParsedResults[0].ParsedText;
+    console.log('OCR text:', ocrText);
+
+    // Extract fields from OCR text
+    const extractedData = extractFieldsFromText(ocrText);
+    console.log('Extracted data:', extractedData);
 
     // Save extracted data to database
     const { error: extractError } = await supabase
